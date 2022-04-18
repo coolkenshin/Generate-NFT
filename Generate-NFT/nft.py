@@ -6,10 +6,11 @@ import os
 import random
 
 import warnings
+
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
-
 from config import CONFIG
+
 
 def parse_config():
     assets_path = 'assets'
@@ -32,18 +33,19 @@ def parse_config():
         rarities = get_weighted_rarities(rarities)
         layer['rarity_weights'] = rarities
         layer['cum_rarity_weights'] = np.cumsum(rarities)
-        print( layer['cum_rarity_weights'])
+        print(layer['cum_rarity_weights'])
         layer['traits'] = traits
 
+
 def get_weighted_rarities(arr):
-    return np.array(arr)/ sum(arr)
+    return np.array(arr) / sum(arr)
 
 
 def generate_single_image(filepaths, output_filename=None):
     bg = Image.open(os.path.join('assets', filepaths[0]))
     for filepath in filepaths[1:]:
         img = Image.open(os.path.join('assets', filepath))
-        bg.paste(img, (0,0), img)
+        bg.paste(img, (0, 0), img)
     if output_filename is not None:
         bg.save(output_filename)
     else:
@@ -51,8 +53,8 @@ def generate_single_image(filepaths, output_filename=None):
             os.makedirs(os.path.join('output', 'single_images'))
         bg.save(os.path.join('output', 'single_images', str(int(time.time())) + '.png'))
 
+
 def get_total_combinations():
-    
     total = 1
     for layer in CONFIG:
         total = total * len(layer['traits'])
@@ -62,20 +64,19 @@ def get_total_combinations():
 def select_index(cum_rarities, rand):
     cum_rarities = [0] + list(cum_rarities)
     for i in range(len(cum_rarities) - 1):
-        if rand >= cum_rarities[i] and rand <= cum_rarities[i+1]:
+        if cum_rarities[i] <= rand <= cum_rarities[i + 1]:
             return i
 
     return None
 
 
 def generate_trait_set_from_config():
-    
     trait_set = []
     trait_paths = []
-    
+
     for layer in CONFIG:
         traits, cum_rarities = layer['traits'], layer['cum_rarity_weights']
-        print(layer['id'],traits, layer['rarity_weights'])
+        print(layer['id'], traits, layer['rarity_weights'])
         rand_num = random.random()
 
         idx = select_index(cum_rarities, rand_num)
@@ -85,13 +86,11 @@ def generate_trait_set_from_config():
         if traits[idx] is not None:
             trait_path = os.path.join(layer['directory'], traits[idx])
             trait_paths.append(trait_path)
-        
+
     return trait_set, trait_paths
 
 
-
 def generate_images(edition, count, drop_dup=True):
-
     rarity_table = {}
     for layer in CONFIG:
         rarity_table[layer['name']] = []
@@ -114,7 +113,7 @@ def generate_images(edition, count, drop_dup=True):
                 rarity_table[CONFIG[idx]['name']].append('none')
     rarity_table = pd.DataFrame(rarity_table).drop_duplicates()
     print("生成第 %i 张图片, %i张不同" % (count, rarity_table.shape[0]))
-    
+
     if drop_dup:
         img_tb_removed = sorted(list(set(range(count)) - set(rarity_table.index)))
         print("移除 %i 张图片..." % (len(img_tb_removed)))
@@ -126,8 +125,8 @@ def generate_images(edition, count, drop_dup=True):
     rarity_table = rarity_table.drop('index', axis=1)
     return rarity_table
 
-def main():
 
+def main():
     print("检查素材...")
     parse_config()
     tot_comb = get_total_combinations()
@@ -137,7 +136,7 @@ def main():
         num_avatars = int(input())
         if num_avatars > 0:
             break
-    
+
     print("您想把这些NFT命名为:")
     edition_name = input()
 
